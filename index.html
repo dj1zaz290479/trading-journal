@@ -2,11 +2,12 @@
 <html lang="pt">
 <head>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00ff88">
+    <meta name="theme-color" content="#0b1120">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Journal">
+    <link rel="apple-touch-icon" href="icon-192.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Trading Journal</title>
@@ -348,7 +349,92 @@
 
     @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
     @media(max-width:680px){.container{padding:14px 16px;}header{padding:0 16px;}.kpis{grid-template-columns:repeat(2,1fr);}}
-  </style>
+  
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 900px) {
+        .charts-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+        /* Layout */
+        .container { padding: 10px 12px; }
+        header { padding: 0 12px; height: 50px; }
+        .logo-text span { display: none; }
+
+        /* Tabs - scrollable horizontal */
+        .tabs {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            padding: 7px 13px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* KPIs - 2 columns */
+        .kpis { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .kpi { padding: 12px 14px; }
+        .kpi-value { font-size: 1.2rem; }
+
+        /* Charts */
+        .charts-row { grid-template-columns: 1fr; gap: 10px; }
+        .card { padding: 14px; }
+
+        /* Tables - horizontal scroll */
+        .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tbl-bar { flex-wrap: wrap; gap: 6px; }
+        .tbl-bar .inp { min-width: 100px; font-size: 0.75rem; }
+        table { min-width: 600px; }
+
+        /* Header pills hidden on mobile */
+        .pill { display: none; }
+
+        /* Calendar */
+        .cal-summary { grid-template-columns: repeat(2, 1fr); }
+        .cal-day { min-height: 58px; padding: 6px 7px; }
+        .day-pnl { font-size: 0.75rem; }
+        .cal-hdr { font-size: 0.6rem; padding: 5px 2px; }
+
+        /* Modals */
+        .overlay { padding: 10px 8px; }
+        .modal { padding: 18px 16px; }
+        .m-kpis { gap: 6px; }
+        .m-kpi { padding: 9px 11px; min-width: 70px; }
+        .modal-top h3 { font-size: 0.9rem; }
+
+        /* Upload */
+        .upload-card { padding: 32px 20px; }
+        .upload-steps { padding: 14px 16px; }
+
+        /* Live tab */
+        .acc-grid { grid-template-columns: repeat(2, 1fr); }
+        .pos-details { grid-template-columns: repeat(2, 1fr); }
+        .live-status { flex-wrap: wrap; gap: 6px; }
+
+        /* Page head */
+        .page-head h2 { font-size: 0.95rem; }
+        .page-head p { font-size: 0.75rem; }
+
+        /* Journal modal */
+        .ss-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 400px) {
+        .kpis { grid-template-columns: repeat(2, 1fr); }
+        .cal-grid { gap: 2px; }
+        .cal-day { min-height: 50px; padding: 4px 5px; }
+        .day-pnl { font-size: 0.7rem; }
+    }
+
+    </style>
 </head>
 <body>
 
