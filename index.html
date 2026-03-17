@@ -11,7 +11,107 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Trading Journal</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    // ===== NOVA TRADE MANUAL =====
+    let mfSide = 'buy';
+
+    function setSide(s) {
+      mfSide = s;
+      document.getElementById('btn-buy').className = 'side-btn' + (s==='buy'?' active':'');
+      document.getElementById('btn-sell').className = 'side-btn' + (s==='sell'?' active':'');
+    }
+
+    function calcPnl() {
+      const entry = parseFloat(document.getElementById('mf-openprice').value);
+      const exit  = parseFloat(document.getElementById('mf-closeprice').value);
+      const vol   = parseFloat(document.getElementById('mf-volume').value);
+      if (isNaN(entry) || isNaN(exit) || isNaN(vol)) return;
+      const diff = mfSide === 'buy' ? exit - entry : entry - exit;
+      const pnl  = parseFloat((diff * vol * 100000).toFixed(2));
+      document.getElementById('mf-pnl').value = pnl;
+    }
+
+    function saveManualTrade() {
+      const sym = document.getElementById('mf-symbol').value.trim().toUpperCase();
+      const ot  = document.getElementById('mf-opentime').value;
+      const ct  = document.getElementById('mf-closetime').value;
+      const ep  = document.getElementById('mf-openprice').value;
+      const cp  = document.getElementById('mf-closeprice').value;
+      const vol = document.getElementById('mf-volume').value;
+      const pnl = document.getElementById('mf-pnl').value;
+
+      if (!sym || !ot || !ct || !ep || !cp || !vol || pnl === '') {
+        showToast('Preenche os campos obrigatórios.', true); return;
+      }
+
+      const id = 'M' + Date.now();
+      const trade = {
+        id, symbol: sym, side: mfSide,
+        volume: vol, openTime: ot.replace('T',' '), closeTime: ct.replace('T',' '),
+        openPrice: ep, closePrice: cp,
+        sl: document.getElementById('mf-sl').value || '0',
+        commission: parseFloat(document.getElementById('mf-commission').value || 0),
+        swap: parseFloat(document.getElementById('mf-swap').value || 0),
+        pnl: parseFloat(pnl)
+      };
+
+      // Save notes
+      const notes = document.getElementById('mf-notes').value.trim();
+      if (notes) {
+        if (!journals) journals = {};
+        if (!journals[id]) journals[id] = { text:'', screenshots:[] };
+        journals[id].text = notes;
+        localStorage.setItem('mt5journals', JSON.stringify(journals));
+      }
+
+      // Save screenshots
+      const ssGrid = document.getElementById('mf-ss-grid');
+      const imgs = ssGrid.querySelectorAll('img');
+      if (imgs.length > 0) {
+        if (!journals) journals = {};
+        if (!journals[id]) journals[id] = { text: notes || '', screenshots:[] };
+        imgs.forEach(img => journals[id].screenshots.push(img.src));
+        localStorage.setItem('mt5journals', JSON.stringify(journals));
+      }
+
+      allTrades = [trade, ...allTrades];
+      localStorage.setItem('mt5trades', JSON.stringify(allTrades));
+      renderAll();
+
+      // Reset form
+      ['mf-symbol','mf-opentime','mf-closetime','mf-openprice','mf-closeprice',
+       'mf-volume','mf-pnl','mf-sl','mf-tp','mf-commission','mf-swap','mf-notes'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      ssGrid.querySelectorAll('.ss-thumb').forEach(e => e.remove());
+      setSide('buy');
+
+      showToast('Trade guardada com sucesso!');
+    }
+
+    // Screenshots in form
+    document.addEventListener('DOMContentLoaded', () => {
+      const inp = document.getElementById('mf-ss-input');
+      const addLbl = document.getElementById('mf-ss-add');
+      const grid = document.getElementById('mf-ss-grid');
+      if (inp) {
+        inp.addEventListener('change', e => {
+          Array.from(e.target.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const wrap = document.createElement('div');
+              wrap.className = 'ss-thumb';
+              wrap.innerHTML = '<img src="'+ev.target.result+'" onclick="window.open(this.src)"><button class="ss-del" onclick="this.parentNode.remove()">✕</button>';
+              grid.insertBefore(wrap, addLbl);
+            };
+            reader.readAsDataURL(file);
+          });
+          inp.value = '';
+        });
+      }
+    });
+
+    </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -434,6 +534,23 @@
         .day-pnl { font-size: 0.7rem; }
     }
 
+    
+    /* FORM NOVA TRADE */
+    .flbl { display:block; font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:5px; }
+    .finp { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:8px; font-size:0.85rem; font-family:Inter,sans-serif; outline:none; transition:border-color 0.18s; box-sizing:border-box; }
+    .finp:focus { border-color:var(--accent); }
+    .side-btn { flex:1; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--surface2); color:var(--muted); font-size:0.85rem; font-weight:600; cursor:pointer; font-family:Inter,sans-serif; transition:all 0.15s; }
+    .side-btn.active.buy { background:var(--green-dim); border-color:var(--green-border); color:var(--green); }
+    .side-btn.active.sell { background:var(--red-dim); border-color:var(--red-border); color:var(--red); }
+    #btn-buy.active { background:var(--green-dim); border-color:var(--green-border); color:var(--green); }
+    #btn-sell.active { background:var(--red-dim); border-color:var(--red-border); color:var(--red); }
+
+    @media (max-width:500px) {
+      #tradeFormGrid { grid-template-columns:1fr !important; }
+      #tradeFormGrid > div[style*="1/3"] { grid-column: 1 !important; }
+      #tradeFormGrid > div { grid-column: 1 !important; }
+    }
+
     </style>
 </head>
 <body>
@@ -458,8 +575,9 @@
     <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
     <button class="tab-btn" onclick="switchTab('journal',this)">Journaling</button>
     <button class="tab-btn" onclick="switchTab('trades',this)">Operações</button>
-    <button class="tab-btn" onclick="switchTab('live',this)">Live</button>
+    
     <button class="tab-btn" onclick="switchTab('import',this)">Importar</button>
+        <button class="tab-btn" onclick="switchTab('newtrade',this)">+ Nova Trade</button>
   </div>
 
   <!-- ── DASHBOARD ── -->
