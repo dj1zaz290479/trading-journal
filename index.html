@@ -591,7 +591,12 @@
         <h3 id="tradeTitle"></h3>
         <p id="tradeSub"></p>
       </div>
-      <button class="close-btn" onclick="closeTradeModal()">&#215;</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="close-btn" title="Editar trade" onclick="openEditTrade()" style="color:var(--accent);border-color:var(--accent)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="close-btn" onclick="closeTradeModal()">&#215;</button>
+      </div>
     </div>
     <div class="m-kpis" id="tradeKpis"></div>
     <div class="divider"><span>Notas</span></div>
@@ -1213,6 +1218,121 @@ function showToast(msg,err=false){
       navigator.serviceWorker.register('/trading-journal/sw.js');
     }
 
+    
+    // ===== EDITAR TRADE =====
+    let editSide = 'buy';
+
+    function setEditSide(s) {
+      editSide = s;
+      document.getElementById('ebtn-buy').className = 'side-btn' + (s==='buy' ? ' active' : '');
+      document.getElementById('ebtn-sell').className = 'side-btn' + (s==='sell' ? ' active' : '');
+    }
+
+    function openEditTrade() {
+      const trade = allTrades.find(t => String(t.id) === String(curTradeId));
+      if (!trade) return;
+      document.getElementById('editSub').textContent = trade.id;
+      document.getElementById('ef-symbol').value = trade.symbol;
+      setEditSide(trade.side);
+      // Convert stored datetime to datetime-local format
+      var toLocal = function(dt) { return dt ? dt.trim().replace(' ','T') : ''; };
+      document.getElementById('ef-opentime').value = toLocal(trade.openTime);
+      document.getElementById('ef-closetime').value = toLocal(trade.closeTime);
+      document.getElementById('ef-openprice').value = trade.openPrice || '';
+      document.getElementById('ef-closeprice').value = trade.closePrice || '';
+      document.getElementById('ef-volume').value = trade.volume || '';
+      document.getElementById('ef-pnl').value = trade.pnl || '';
+      document.getElementById('ef-sl').value = trade.sl || '';
+      document.getElementById('ef-tp').value = trade.tp || '';
+      document.getElementById('ef-commission').value = trade.commission || '';
+      document.getElementById('ef-swap').value = trade.swap || '';
+      document.getElementById('editOverlay').classList.add('open');
+    }
+
+    function closeEditTrade() {
+      document.getElementById('editOverlay').classList.remove('open');
+    }
+
+    function saveEditTrade() {
+      var sym = document.getElementById('ef-symbol').value.trim().toUpperCase();
+      var pnl = document.getElementById('ef-pnl').value;
+      if (!sym || pnl === '') { showToast('Símbolo e PnL são obrigatórios.', true); return; }
+
+      var ot = document.getElementById('ef-opentime').value;
+      var ct = document.getElementById('ef-closetime').value;
+
+      allTrades = allTrades.map(function(t) {
+        if (String(t.id) !== String(curTradeId)) return t;
+        return {
+          id: t.id, symbol: sym, side: editSide,
+          volume: document.getElementById('ef-volume').value,
+          openTime: ot.replace('T',' '),
+          closeTime: ct.replace('T',' '),
+          openPrice: document.getElementById('ef-openprice').value,
+          closePrice: document.getElementById('ef-closeprice').value,
+          sl: document.getElementById('ef-sl').value || '0',
+          tp: document.getElementById('ef-tp').value || '0',
+          commission: parseFloat(document.getElementById('ef-commission').value || 0),
+          swap: parseFloat(document.getElementById('ef-swap').value || 0),
+          pnl: parseFloat(pnl)
+        };
+      });
+
+      localStorage.setItem('mt5trades', JSON.stringify(allTrades));
+      renderAll();
+      closeEditTrade();
+      closeTradeModal();
+      showToast('Trade atualizada!');
+    }
+
+    function deleteEditTrade() {
+      if (!confirm('Apagar esta trade?')) return;
+      allTrades = allTrades.filter(function(t){ return String(t.id) !== String(curTradeId); });
+      localStorage.setItem('mt5trades', JSON.stringify(allTrades));
+      renderAll();
+      closeEditTrade();
+      closeTradeModal();
+      showToast('Trade apagada.');
+    }
+
     </script>
+
+<!-- EDIT TRADE MODAL -->
+<div class="overlay" id="editOverlay" style="z-index:300;">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-top">
+      <div><h3>Editar Trade</h3><p id="editSub" style="color:var(--muted);font-size:0.76rem;margin-top:3px;"></p></div>
+      <button class="close-btn" onclick="closeEditTrade()">&#215;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="editFormGrid">
+      <div style="grid-column:1/3">
+        <label class="flbl">Símbolo</label>
+        <input class="finp" id="ef-symbol" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div style="grid-column:1/3;display:flex;gap:8px;">
+        <button class="side-btn" id="ebtn-buy" onclick="setEditSide('buy')">▲ BUY</button>
+        <button class="side-btn" id="ebtn-sell" onclick="setEditSide('sell')">▼ SELL</button>
+      </div>
+      <div><label class="flbl">Abertura</label><input class="finp" type="datetime-local" id="ef-opentime"></div>
+      <div><label class="flbl">Fecho</label><input class="finp" type="datetime-local" id="ef-closetime"></div>
+      <div><label class="flbl">Preço Entrada</label><input class="finp" type="number" step="any" id="ef-openprice"></div>
+      <div><label class="flbl">Preço Saída</label><input class="finp" type="number" step="any" id="ef-closeprice"></div>
+      <div><label class="flbl">Volume (lots)</label><input class="finp" type="number" step="any" id="ef-volume"></div>
+      <div><label class="flbl">PnL</label><input class="finp" type="number" step="any" id="ef-pnl"></div>
+      <div><label class="flbl">Stop Loss</label><input class="finp" type="number" step="any" id="ef-sl"></div>
+      <div><label class="flbl">Take Profit</label><input class="finp" type="number" step="any" id="ef-tp"></div>
+      <div><label class="flbl">Comissão</label><input class="finp" type="number" step="any" id="ef-commission"></div>
+      <div><label class="flbl">Swap</label><input class="finp" type="number" step="any" id="ef-swap"></div>
+      <div style="grid-column:1/3;margin-top:4px;display:flex;gap:8px;">
+        <button class="btn-primary" onclick="saveEditTrade()" style="flex:1;justify-content:center;padding:12px;">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar
+        </button>
+        <button class="btn-ghost-red" onclick="deleteEditTrade()" style="padding:12px 16px;">🗑 Apagar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
