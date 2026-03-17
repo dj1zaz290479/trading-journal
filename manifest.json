@@ -2,7 +2,7 @@
   "name": "Trading Journal",
   "short_name": "Journal",
   "description": "Diário de trading pessoal",
-  "start_url": "/index.html",
+  "start_url": "/trading-journal/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0a",
@@ -19,4 +19,5 @@
       "type": "image/png"
     }
   ]
+  "scope": "/trading-journal/"
 }
