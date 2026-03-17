@@ -1,7 +1,8 @@
 const CACHE_NAME = 'trading-journal-v1';
 const ASSETS = [
-  '/index.html',
-  '/manifest.json'
+  '/trading-journal/',
+  '/trading-journal/index.html',
+  '/trading-journal/manifest.json'
 ];
 
 self.addEventListener('install', e => {
